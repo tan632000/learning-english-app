@@ -1,29 +1,35 @@
-// models/Quiz.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+// Sub-schema cho từng câu hỏi
 const questionSchema = new Schema({
-    questionText: { type: String, required: true },
-    // Mảng các lựa chọn
-    options: [{ type: String, required: true }],
-    // Vị trí (index) của đáp án đúng trong mảng options
-    correctAnswerIndex: { type: Number, required: true }
-});
+    questionText: {
+        type: String,
+        required: true
+    },
+    options: {
+        type: [String],
+        required: true,
+        validate: [arr => arr.length >= 2, 'A question must have at least 2 options.']
+    },
+    correctAnswer: {
+        type: String,
+        required: true
+    }
+}, { _id: false });
 
 const quizSchema = new Schema({
     title: {
         type: String,
         required: true
     },
-    // Lồng ghép danh sách câu hỏi
-    questions: [questionSchema],
-    // Bài quiz này thuộc về bài học nào (để tiện truy vấn ngược)
     lesson: {
         type: Schema.Types.ObjectId,
-        ref: 'Lesson'
-    }
-}, {
-    timestamps: true
-});
+        ref: 'Lesson',
+        required: true,
+        unique: true // Mỗi bài học chỉ nên có một bài quiz
+    },
+    questions: [questionSchema]
+}, { timestamps: true });
 
 module.exports = mongoose.model('Quiz', quizSchema);

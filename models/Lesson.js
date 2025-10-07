@@ -1,35 +1,43 @@
-// models/Lesson.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+
+// Sub-schema cho từ vựng để có cấu trúc rõ ràng
+const vocabularySchema = new Schema({
+    word: { type: String, required: true },
+    meaning: { type: String, required: true },
+    pronunciation: { type: String }, // e.g., /wɜːd/
+    example: { type: String },
+    audioUrl: { type: String }, // URL to audio file for listening
+    imageUrl: { type: String }  // URL to an image for flashcards
+}, { _id: false }); // Không cần _id cho từng từ vựng
 
 const lessonSchema = new Schema({
     title: {
         type: String,
         required: true
     },
-    // Nội dung bài học, có thể là HTML/Markdown
     content: {
-        type: String,
+        type: String, // Có thể dùng cho "bài đọc"
         required: true
     },
-    // Video cho bài học (nếu có)
     videoUrl: {
         type: String
     },
-    // Thuộc về khóa học nào
+    vocabulary: {
+        type: [vocabularySchema], // Mảng các từ vựng
+        default: []
+    },
     course: {
         type: Schema.Types.ObjectId,
         ref: 'Course',
         required: true
     },
-    // Bài kiểm tra cuối bài học (nếu có)
     quiz: {
         type: Schema.Types.ObjectId,
         ref: 'Quiz'
     },
-    // Thời lượng ước tính (phút)
     duration: {
-        type: Number,
+        type: Number, // in minutes
         default: 0
     }
 }, {

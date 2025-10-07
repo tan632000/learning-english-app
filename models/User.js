@@ -32,6 +32,15 @@ const userSchema = new Schema({
         type: String,
         enum: ['user', 'admin', 'editor'],
         default: 'user'
+    },
+    // --- Gamification Fields ---
+    weeklyScore: {
+        type: Number,
+        default: 0
+    },
+    monthlyScore: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true // Tự động thêm createdAt và updatedAt
