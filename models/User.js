@@ -1,49 +1,66 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const userSchema = new Schema({
+const userSchema = new Schema(
+  {
     googleId: {
-        type: String,
+      type: String,
     },
     username: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        minlength: 3
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      minlength: 3,
     },
     email: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        lowercase: true
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
     },
     password: {
-        type: String,
-        // Mật khẩu không bắt buộc nếu đăng ký bằng Google
-        required: function() { return !this.googleId; }
+      type: String,
+      // Mật khẩu không bắt buộc nếu đăng ký bằng Google
+      required: function () {
+        return !this.googleId;
+      },
     },
     avatarUrl: {
-        type: String,
-        default: '/default-avatar.png'
+      type: String,
+      default: "/default-avatar.png",
     },
     role: {
-        type: String,
-        enum: ['user', 'admin', 'editor'],
-        default: 'user'
+      type: String,
+      enum: ["user", "admin", "editor"],
+      default: "user",
     },
     // --- Gamification Fields ---
     weeklyScore: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
     monthlyScore: {
-        type: Number,
-        default: 0
-    }
-}, {
-    timestamps: true // Tự động thêm createdAt và updatedAt
-});
+      type: Number,
+      default: 0,
+    },
+    following: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    followers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+  },
+  {
+    timestamps: true, // Tự động thêm createdAt và updatedAt
+  }
+);
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

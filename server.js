@@ -44,6 +44,11 @@ app.use('/api/instructor', require('./routes/instructor'));
 app.use('/api/flashcard-sets', require('./routes/flashcards'));
 app.use('/api/resources', require('./routes/resources'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/settings', require('./routes/settings'));
+app.use('/api/comments', require('./routes/comments'));
+app.use('/api/forums', require('./routes/forums'));
+app.use('/api/follows', require('./routes/follows'));
+app.use('/api/share', require('./routes/share'));
 
 // Sử dụng Error Handler Middleware (phải đặt ở cuối cùng)
 app.use(errorHandler);

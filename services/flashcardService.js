@@ -14,11 +14,17 @@ exports.getAllSets = async () => {
 /**
  * Get a single flashcard set by its ID.
  * @param {string} setId - The ID of the flashcard set.
+ * @param {object} user - The user object from the request.
  * @returns {Promise<object>} - The flashcard set object.
  */
-exports.getSetById = async (setId) => {
-    const set = await FlashcardSet.findOne({ _id: setId, isPublished: true })
-        .populate('author', 'username');
+exports.getSetById = async (setId, user) => {
+    let query = FlashcardSet.findById(setId);
+
+    if (!user || user.role !== 'admin') {
+        query = query.where('isPublished').equals(true);
+    }
+
+    const set = await query.populate('author', 'username');
     if (!set) {
         throw httpError.NotFound('Flashcard set not found or not published.');
     }

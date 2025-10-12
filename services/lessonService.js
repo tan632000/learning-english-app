@@ -4,13 +4,19 @@ const httpError = require('http-errors');
 /**
  * Get a single lesson by its ID.
  * @param {string} lessonId - The ID of the lesson.
+ * @param {object} user - The user object from the request.
  * @returns {Promise<object>} - The lesson object.
  */
-exports.getLessonById = async (lessonId) => {
+exports.getLessonById = async (lessonId, user) => {
     // Populate thông tin của khóa học chứa bài học này
-    const lesson = await Lesson.findById(lessonId).populate('course', 'title');
+    const lesson = await Lesson.findById(lessonId).populate('course', 'title isPublished');
 
     if (!lesson) {
+        throw httpError.NotFound('Lesson not found');
+    }
+
+    // If user is not an admin, they can only access lessons in a published course
+    if ((!user || user.role !== 'admin') && !lesson.course.isPublished) {
         throw httpError.NotFound('Lesson not found');
     }
 
