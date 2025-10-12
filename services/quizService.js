@@ -45,31 +45,46 @@ exports.submitQuiz = async (quizId, userId, userAnswers) => {
         throw httpError.NotFound('Quiz not found');
     }
 
-    let score = 0;
+    let autoGradedScore = 0;
     const detailedAnswers = [];
     const totalQuestions = quiz.questions.length;
+    let hasManualGrading = false;
 
     quiz.questions.forEach((question, index) => {
         const userAnswer = userAnswers[index];
-        const isCorrect = userAnswer.answer === question.correctAnswer;
+        let answerStatus = 'auto-graded';
+        let isCorrect = null;
+        let answerScore = 0;
 
-        if (isCorrect) {
-            score++;
+        if (question.type === 'multiple-choice') {
+            isCorrect = userAnswer.answer === question.correctAnswer;
+            if (isCorrect) {
+                answerScore = question.points || 1;
+                autoGradedScore += answerScore;
+            }
+        } else {
+            // 'essay' or 'upload' questions need manual review
+            answerStatus = 'pending-review';
+            hasManualGrading = true;
         }
 
         detailedAnswers.push({
+            questionId: question._id,
             questionText: question.questionText,
-            selectedAnswer: userAnswer.answer,
-            correctAnswer: question.correctAnswer,
+            studentAnswer: userAnswer.answer,
             isCorrect,
+            status: answerStatus,
+            score: answerScore,
         });
     });
 
     const result = await QuizResult.create({
         user: userId,
         quiz: quizId,
-        score,
+        score: autoGradedScore,
         totalQuestions,
+        // If any question needs manual grading, the whole result is pending review
+        status: hasManualGrading ? 'pending-review' : 'completed',
         answers: detailedAnswers,
     });
 
@@ -172,4 +187,62 @@ exports.deleteQuiz = async (quizId, userId, userRole) => {
     // Unlink quiz from lesson
     await Lesson.findByIdAndUpdate(quiz.lesson._id, { $unset: { quiz: "" } });
     await quiz.deleteOne();
+};
+
+/**
+ * Retrieves all quiz submissions that are pending manual review for a specific course.
+ * @param {string} courseId - The ID of the course.
+ * @returns {Promise<Array>} - A list of submissions to be graded.
+ */
+exports.getSubmissionsForGrading = async (courseId) => {
+    const course = await Course.findById(courseId).select('lessons').lean();
+    if (!course) throw httpError.NotFound('Course not found');
+
+    const lessonIds = course.lessons;
+    const quizzes = await Quiz.find({ lesson: { $in: lessonIds } }).select('_id').lean();
+    const quizIds = quizzes.map(q => q._id);
+
+    const submissions = await QuizResult.find({
+        quiz: { $in: quizIds },
+        status: 'pending-review'
+    })
+    .populate('user', 'username avatarUrl')
+    .populate({ path: 'quiz', select: 'title' })
+    .sort({ createdAt: 1 })
+    .lean();
+
+    return submissions;
+};
+
+/**
+ * Manually grades a specific answer in a quiz submission.
+ * @param {string} resultId - The ID of the QuizResult.
+ * @param {string} answerId - The ID of the answer within the result.
+ * @param {object} gradeData - The grading data { score, feedback }.
+ * @returns {Promise<object>} - The updated quiz result.
+ */
+exports.gradeSubmission = async (resultId, answerId, gradeData) => {
+    const { score, feedback } = gradeData;
+
+    const result = await QuizResult.findById(resultId);
+    if (!result) throw httpError.NotFound('Submission result not found.');
+
+    const answer = result.answers.id(answerId);
+    if (!answer) throw httpError.NotFound('Answer not found in this submission.');
+    if (answer.status !== 'pending-review') throw httpError.Conflict('This answer has already been graded.');
+
+    answer.score = score;
+    answer.instructorFeedback = feedback;
+    answer.status = 'graded';
+
+    // Check if all manually graded questions are now graded
+    const allGraded = result.answers.every(a => a.status !== 'pending-review');
+    if (allGraded) {
+        result.status = 'completed';
+        // Recalculate total score
+        result.score = result.answers.reduce((total, ans) => total + ans.score, 0);
+    }
+
+    await result.save();
+    return result;
 };

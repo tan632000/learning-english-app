@@ -80,3 +80,41 @@ exports.deleteQuiz = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * @desc    Get all submissions pending review for a course
+ * @route   GET /api/quizzes/submissions/pending?courseId=:courseId
+ * @access  Private (Admin/Editor)
+ */
+exports.getSubmissionsForGrading = async (req, res, next) => {
+    try {
+        const { courseId } = req.query;
+        if (!courseId) return res.status(400).json({ message: 'Course ID is required' });
+
+        const submissions = await quizService.getSubmissionsForGrading(courseId);
+        res.json(submissions);
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * @desc    Grade a single answer in a submission
+ * @route   POST /api/quizzes/submissions/:resultId/grade/:answerId
+ * @access  Private (Admin/Editor)
+ */
+exports.gradeSubmission = async (req, res, next) => {
+    try {
+        const { resultId, answerId } = req.params;
+        const { score, feedback } = req.body;
+
+        if (score === undefined || !feedback) {
+            return res.status(400).json({ message: 'Score and feedback are required.' });
+        }
+
+        const updatedResult = await quizService.gradeSubmission(resultId, answerId, { score, feedback });
+        res.json(updatedResult);
+    } catch (error) {
+        next(error);
+    }
+};

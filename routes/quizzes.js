@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { getQuiz, submitQuiz, createQuiz, updateQuiz, deleteQuiz } = require('../controllers/quizController');
+const { getQuiz, submitQuiz, createQuiz, updateQuiz, deleteQuiz, getSubmissionsForGrading, gradeSubmission } = require('../controllers/quizController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // --- Instructor/Admin Routes ---
 router.route('/')
     .post(protect, authorize(['admin', 'editor']), createQuiz);
+
+router.get('/submissions/pending', protect, authorize(['admin', 'editor']), getSubmissionsForGrading);
+
+router.post('/submissions/:resultId/grade/:answerId', protect, authorize(['admin', 'editor']), gradeSubmission);
 
 router.route('/:id')
     .put(protect, authorize(['admin', 'editor']), updateQuiz)

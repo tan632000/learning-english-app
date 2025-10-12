@@ -40,6 +40,10 @@ app.use('/api/wordbook', require('./routes/wordbook'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/challenges', require('./routes/challenges'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/instructor', require('./routes/instructor'));
+app.use('/api/flashcard-sets', require('./routes/flashcards'));
+app.use('/api/resources', require('./routes/resources'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Sử dụng Error Handler Middleware (phải đặt ở cuối cùng)
 app.use(errorHandler);

@@ -16,6 +16,11 @@ const protect = async (req, res, next) => {
             // 3. Lấy thông tin người dùng từ token và gắn vào request (loại bỏ password)
             req.user = await User.findById(decoded.user.id).select('-password');
 
+            // 4. Kiểm tra xem tài khoản có bị vô hiệu hóa không
+            if (req.user && !req.user.isActive) {
+                return next(httpError.Forbidden('Your account has been deactivated.'));
+            }
+
             next();
         } catch (error) {
             console.error(error);
